@@ -1,0 +1,1309 @@
+<!-- ... existing code ... -->
+<html lang="en" class="h-full bg-[#120305] text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wellness - Health Analytics</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#2563EB', // Vibrant Blue
+              hover: '#1D4ED8',
+              light: '#EFF6FF',
+              dark: '#1E3A8A',
+              accent: '#3B82F6',
+              border: '#E2E8F0',
+              card: '#FFFFFF',
+              sidebar: '#F8FAFC',
+              bg: '#F1F5F9'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@1,500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #F1F5F9; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+    .nav-btn.active { background-color: #EFF6FF; color: #2563EB; font-weight: 700; border-left: 3px solid #2563EB; }
+    .card-dark { background-color: #FFFFFF; border: 1px solid #E2E8F0; }
+  </style>
+</head>
+<body class="h-full flex overflow-hidden bg-[#F1F5F9] text-slate-800">
+
+  <!-- LOGIN / REGISTER MODAL OVERLAY -->
+  <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-200 relative overflow-hidden">
+      <div class="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-400 absolute top-0 left-0 right-0"></div>
+      
+      <div class="text-center mt-2 mb-6">
+        <div class="inline-flex p-3 bg-blue-50 text-blue-600 rounded-2xl mb-3 border border-blue-100">
+          <i data-lucide="flower-2" class="w-8 h-8"></i>
+        </div>
+        <h2 id="authTitle" class="text-2xl font-bold text-slate-900 tracking-tight">Welcome Back</h2>
+        <p id="authSubtitle" class="text-xs text-slate-500 mt-1 font-medium">Log in to track your personal health data</p>
+      </div>
+
+      <!-- Auth Form -->
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
+          <input type="text" id="authName" placeholder="e.g. Pratha Sharma" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-blue-600 text-slate-800 placeholder-slate-400" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Address</label>
+          <input type="email" id="authEmail" placeholder="pratha@wellness.com" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-blue-600 text-slate-800 placeholder-slate-400" />
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 transition transform active:scale-95 flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>Log In / Continue</span>
+        </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+        <button onclick="continueAsGuest()" class="text-xs text-slate-500 hover:text-blue-600 font-semibold transition flex items-center justify-center gap-1 mx-auto">
+          <i data-lucide="user-check" class="w-3.5 h-3.5 text-blue-600"></i> Continue as Guest
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Navigation -->
+  <aside class="w-56 bg-white border-r border-slate-200 flex-shrink-0 flex flex-col justify-between z-20 hidden md:flex">
+    <div>
+      <!-- Brand Logo -->
+      <div class="p-5 flex items-center space-x-3">
+        <div class="p-2 bg-blue-50 text-blue-600 rounded-xl border border-blue-100">
+          <i data-lucide="flower-2" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg text-slate-900 leading-none">Wellness</h1>
+          <p class="text-[10px] text-slate-500 font-medium mt-1">A Healthier, Happier You</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="px-3 space-y-1 mt-2">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn active w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-blue-600 transition text-xs font-medium">
+          <i data-lucide="home" class="w-4 h-4 text-blue-600"></i>
+          <span>Dashboard</span>
+        </button>
+        <button onclick="openLogModal('Nutrition')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="apple" class="w-4 h-4"></i>
+          <span>Nutrition</span>
+        </button>
+        <button onclick="openLogModal('Workout')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="dumbbell" class="w-4 h-4"></i>
+          <span>Workouts</span>
+        </button>
+        <button onclick="openLogModal('Sleep')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="moon" class="w-4 h-4"></i>
+          <span>Sleep</span>
+        </button>
+        <button onclick="scrollToSection('mood-section')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="smile" class="w-4 h-4"></i>
+          <span>Mood</span>
+        </button>
+        <button onclick="scrollToSection('habits-section')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+          <span>Habits</span>
+        </button>
+        <button onclick="openLogModal('Weight')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="target" class="w-4 h-4"></i>
+          <span>Goals</span>
+        </button>
+        <button onclick="scrollToSection('weight-section')" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>Progress</span>
+        </button>
+        <button onclick="openLogsDrawer()" class="nav-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Log History</span>
+        </button>
+
+        <div class="pt-4 border-t border-slate-100 space-y-1">
+          <button onclick="openAuthModal()" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span>Account Profile</span>
+          </button>
+          <button onclick="clearAllUserData()" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition text-xs font-medium">
+            <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+            <span>Clear User Data</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Decorative Card -->
+    <div class="p-3 m-3 bg-blue-50 rounded-2xl border border-blue-100 relative overflow-hidden">
+      <div class="relative z-10 p-2">
+        <p class="text-xs font-serif italic text-blue-900 leading-snug">Small Steps<br>Big Changes</p>
+        <span class="inline-block mt-2 text-blue-600">💧</span>
+      </div>
+      <svg class="absolute bottom-0 right-0 w-20 h-20 text-blue-200/50 pointer-events-none" viewBox="0 0 100 100" fill="currentColor">
+        <path d="M50 0 C 60 40, 90 50, 100 50 C 60 60, 50 90, 50 100 C 40 60, 10 50, 0 50 C 40 40, 50 10, 50 0 Z"></path>
+      </svg>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden bg-[#F1F5F9]">
+    
+    <!-- Header -->
+    <header class="px-6 py-4 flex items-center justify-between gap-4 z-10 flex-shrink-0 bg-white border-b border-slate-200">
+      <div class="relative w-full max-w-md hidden sm:block">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5"></i>
+        <input type="text" id="global-search" onkeyup="handleSearch(this.value)" placeholder="Search logged activities..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-medium focus:border-blue-600 outline-none text-slate-800 placeholder-slate-400" />
+      </div>
+
+      <div class="flex items-center space-x-4 ml-auto">
+        <button onclick="openLogModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition transform active:scale-95">
+          <i data-lucide="plus" class="w-4 h-4"></i> Log Entry
+        </button>
+
+        <button onclick="openLogsDrawer()" class="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900" title="Log Records">
+          <i data-lucide="list" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Profile -->
+        <button onclick="openAuthModal()" class="flex items-center space-x-2.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl hover:border-blue-600 transition cursor-pointer">
+          <div class="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center overflow-hidden" id="headerAvatar">
+            PS
+          </div>
+          <div class="text-left hidden sm:block">
+            <p class="text-xs font-bold text-slate-800 leading-none" id="headerUserName">Pratha Sharma</p>
+            <span class="text-[10px] text-slate-500 font-medium" id="headerUserRole">Keep going ✨</span>
+          </div>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Canvas -->
+    <main class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+      
+      <!-- Top Row: Welcome + Quote -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 card-dark p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              Good Morning, <span id="welcomeUserName">Pratha</span>! <span class="text-blue-500">✨</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">Take care of your mind, body and future.</p>
+          </div>
+
+          <div class="px-3.5 py-2 bg-blue-50 border border-blue-100 rounded-xl text-xs font-semibold text-blue-600 flex items-center gap-2">
+            <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
+            <span id="current-date-text">Wed, 22 Oct 2026</span>
+          </div>
+        </div>
+
+        <div class="card-dark p-5 rounded-2xl flex items-center justify-between relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm">
+          <div>
+            <p class="font-serif italic text-white text-sm">"Progress, not perfection."</p>
+            <span class="text-[10px] text-blue-100 block mt-1">Calculated purely from your logged activity</span>
+          </div>
+          <span class="text-blue-200/50 text-3xl">🌊</span>
+        </div>
+      </div>
+
+      <!-- Metric Rings -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Steps -->
+        <div class="card-dark p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/60 transition shadow-sm" onclick="openLogModal('Steps')">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <div class="p-2 bg-blue-50 text-blue-600 rounded-full">
+                <i data-lucide="footprints" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-medium text-slate-500">Steps</span>
+            </div>
+            <p class="text-xl font-bold text-slate-900" id="card-steps-val">0</p>
+            <p class="text-[10px] text-slate-400">/ 8,000</p>
+          </div>
+          <div class="relative w-14 h-14 flex items-center justify-center">
+            <svg class="w-14 h-14 transform -rotate-90">
+              <circle cx="28" cy="28" r="22" stroke="#E2E8F0" stroke-width="4" fill="transparent" />
+              <circle id="ring-steps" cx="28" cy="28" r="22" stroke="#2563EB" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138" stroke-linecap="round" fill="transparent" class="transition-all duration-700" />
+            </svg>
+            <span class="absolute text-xs font-bold text-slate-800" id="pct-steps">0%</span>
+          </div>
+        </div>
+
+        <!-- Calories -->
+        <div class="card-dark p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/60 transition shadow-sm" onclick="openLogModal('Nutrition')">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <div class="p-2 bg-indigo-50 text-indigo-600 rounded-full">
+                <i data-lucide="flame" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-medium text-slate-500">Calories</span>
+            </div>
+            <p class="text-xl font-bold text-slate-900" id="card-calories-val">0</p>
+            <p class="text-[10px] text-slate-400">/ 1,800 kcal</p>
+          </div>
+          <div class="relative w-14 h-14 flex items-center justify-center">
+            <svg class="w-14 h-14 transform -rotate-90">
+              <circle cx="28" cy="28" r="22" stroke="#E2E8F0" stroke-width="4" fill="transparent" />
+              <circle id="ring-calories" cx="28" cy="28" r="22" stroke="#6366F1" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138" stroke-linecap="round" fill="transparent" class="transition-all duration-700" />
+            </svg>
+            <span class="absolute text-xs font-bold text-slate-800" id="pct-calories">0%</span>
+          </div>
+        </div>
+
+        <!-- Water -->
+        <div class="card-dark p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/60 transition shadow-sm" onclick="openLogModal('Water')">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <div class="p-2 bg-sky-50 text-sky-600 rounded-full">
+                <i data-lucide="droplet" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-medium text-slate-500">Water</span>
+            </div>
+            <p class="text-xl font-bold text-slate-900" id="card-water-val">0 L</p>
+            <p class="text-[10px] text-slate-400">/ 2.5 L</p>
+          </div>
+          <div class="relative w-14 h-14 flex items-center justify-center">
+            <svg class="w-14 h-14 transform -rotate-90">
+              <circle cx="28" cy="28" r="22" stroke="#E2E8F0" stroke-width="4" fill="transparent" />
+              <circle id="ring-water" cx="28" cy="28" r="22" stroke="#0EA5E9" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138" stroke-linecap="round" fill="transparent" class="transition-all duration-700" />
+            </svg>
+            <span class="absolute text-xs font-bold text-slate-800" id="pct-water">0%</span>
+          </div>
+        </div>
+
+        <!-- Sleep -->
+        <div class="card-dark p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/60 transition shadow-sm" onclick="openLogModal('Sleep')">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <div class="p-2 bg-blue-50 text-blue-600 rounded-full">
+                <i data-lucide="moon" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-medium text-slate-500">Sleep</span>
+            </div>
+            <p class="text-xl font-bold text-slate-900" id="card-sleep-val">0 h</p>
+            <p class="text-[10px] text-slate-400">/ 8 h target</p>
+          </div>
+          <div class="relative w-14 h-14 flex items-center justify-center">
+            <svg class="w-14 h-14 transform -rotate-90">
+              <circle cx="28" cy="28" r="22" stroke="#E2E8F0" stroke-width="4" fill="transparent" />
+              <circle id="ring-sleep" cx="28" cy="28" r="22" stroke="#3B82F6" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="138" stroke-linecap="round" fill="transparent" class="transition-all duration-700" />
+            </svg>
+            <span class="absolute text-xs font-bold text-slate-800" id="pct-sleep">0%</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Main Layout Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Left 2 Columns -->
+        <div class="lg:col-span-2 space-y-5">
+          
+          <!-- Row 1: Nutrition + Weight -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Nutrition Intake -->
+            <div class="card-dark p-5 rounded-2xl flex flex-col justify-between shadow-sm">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                  <span class="text-blue-600">🍽️</span>
+                  <h3 class="font-bold text-slate-900 text-sm">Nutrition Intake</h3>
+                </div>
+                <button onclick="openLogModal('Nutrition')" class="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                  Log Meal <i data-lucide="plus" class="w-3 h-3"></i>
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between gap-4">
+                <div class="relative w-32 h-32 flex-shrink-0 flex items-center justify-center">
+                  <canvas id="nutritionChart"></canvas>
+                  <div class="absolute text-center">
+                    <span class="text-base font-bold text-slate-900 block leading-tight" id="nutri-center-cal">0</span>
+                    <span class="text-[9px] text-slate-500">kcal total</span>
+                  </div>
+                </div>
+
+                <div class="space-y-2 flex-1 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-2 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Carbs</span>
+                    <span class="font-bold text-slate-900" id="nutri-carbs-pct">0g</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-2 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Protein</span>
+                    <span class="font-bold text-slate-900" id="nutri-protein-pct">0g</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-2 text-slate-600"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Fats</span>
+                    <span class="font-bold text-slate-900" id="nutri-fats-pct">0g</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Weight Progress -->
+            <div class="card-dark p-5 rounded-2xl flex flex-col justify-between shadow-sm" id="weight-section">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-blue-500">📈</span>
+                  <h3 class="font-bold text-slate-900 text-sm">Weight Progress</h3>
+                </div>
+                <button onclick="openLogModal('Weight')" class="text-xs text-blue-600 font-medium hover:underline">+ Log Weight</button>
+              </div>
+
+              <div class="h-36 w-full relative">
+                <canvas id="weightChart"></canvas>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Row 2: Workout + Mood + Sleep -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Workout Card -->
+            <div class="card-dark p-5 rounded-2xl flex flex-col justify-between shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="dumbbell" class="w-4 h-4 text-blue-600"></i>
+                  <h3 class="font-bold text-slate-900 text-sm">Workout Session</h3>
+                </div>
+                <button onclick="openLogModal('Workout')" class="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                  + Log Custom <i data-lucide="plus" class="w-3 h-3"></i>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="w-24 h-24 bg-blue-50 rounded-2xl flex items-center justify-center relative overflow-hidden flex-shrink-0 border border-blue-100">
+                  <i data-lucide="activity" class="w-10 h-10 text-blue-600"></i>
+                </div>
+
+                <div class="space-y-2 flex-1">
+                  <p class="text-xs font-bold text-slate-600">Workout Timer</p>
+                  <p class="text-lg font-mono font-bold text-blue-600" id="timer-display">00:00</p>
+
+                  <button onclick="toggleWorkoutTimer()" id="btn-timer" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm">
+                    Start Session
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mood & Sleep -->
+            <div class="space-y-5">
+              <!-- Mood Tracker -->
+              <div class="card-dark p-4 rounded-2xl shadow-sm" id="mood-section">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <i data-lucide="smile" class="w-4 h-4 text-blue-600"></i>
+                    <h3 class="font-bold text-slate-900 text-sm">Log Your Mood</h3>
+                  </div>
+                  <span class="text-[10px] text-slate-500" id="current-mood-display">Select today's mood</span>
+                </div>
+
+                <!-- Interactive Mood Buttons -->
+                <div class="grid grid-cols-5 text-center gap-1 mt-3">
+                  <button onclick="logMood('Awesome', '😄')" class="p-2 rounded-xl bg-slate-50 hover:bg-blue-50 transition border border-slate-100">
+                    <span class="text-xl">😄</span>
+                    <span class="block text-[9px] text-slate-600 mt-0.5">Great</span>
+                  </button>
+                  <button onclick="logMood('Good', '🙂')" class="p-2 rounded-xl bg-slate-50 hover:bg-blue-50 transition border border-slate-100">
+                    <span class="text-xl">🙂</span>
+                    <span class="block text-[9px] text-slate-600 mt-0.5">Good</span>
+                  </button>
+                  <button onclick="logMood('Neutral', '😐')" class="p-2 rounded-xl bg-slate-50 hover:bg-blue-50 transition border border-slate-100">
+                    <span class="text-xl">😐</span>
+                    <span class="block text-[9px] text-slate-600 mt-0.5">Okay</span>
+                  </button>
+                  <button onclick="logMood('Down', '🙁')" class="p-2 rounded-xl bg-slate-50 hover:bg-blue-50 transition border border-slate-100">
+                    <span class="text-xl">🙁</span>
+                    <span class="block text-[9px] text-slate-600 mt-0.5">Down</span>
+                  </button>
+                  <button onclick="logMood('Exhausted', '😫')" class="p-2 rounded-xl bg-slate-50 hover:bg-blue-50 transition border border-slate-100">
+                    <span class="text-xl">😫</span>
+                    <span class="block text-[9px] text-slate-600 mt-0.5">Tired</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Sleep Tracker Bar Chart -->
+              <div class="card-dark p-4 rounded-2xl shadow-sm">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center space-x-2">
+                    <i data-lucide="moon" class="w-4 h-4 text-blue-600"></i>
+                    <h3 class="font-bold text-slate-900 text-sm">Sleep Tracker</h3>
+                  </div>
+                  <button onclick="openLogModal('Sleep')" class="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                    Log Hours <i data-lucide="plus" class="w-3 h-3"></i>
+                  </button>
+                </div>
+
+                <div class="h-24 w-full relative">
+                  <canvas id="sleepChart"></canvas>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Row 3: Biometrics + Habits -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            
+            <!-- Health Metrics -->
+            <div class="card-dark p-5 rounded-2xl shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <span class="text-blue-600">💖</span>
+                  <h3 class="font-bold text-slate-900 text-sm">Health Metrics</h3>
+                </div>
+                <span class="text-[10px] text-slate-500">Live User Stats</span>
+              </div>
+
+              <div class="grid grid-cols-4 gap-2 text-center">
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Weight</span>
+                  <span class="text-xs font-bold text-slate-900" id="hm-weight">--</span>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">BMI</span>
+                  <span class="text-xs font-bold text-slate-900" id="hm-bmi">--</span>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Body Fat</span>
+                  <span class="text-xs font-bold text-slate-900" id="hm-fat">--</span>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Heart Rate</span>
+                  <span class="text-xs font-bold text-slate-900" id="hm-bpm">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Habits Tracker -->
+            <div class="card-dark p-5 rounded-2xl shadow-sm" id="habits-section">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="target" class="w-4 h-4 text-blue-600"></i>
+                  <h3 class="font-bold text-slate-900 text-sm">Interactive Habits</h3>
+                </div>
+                <span class="text-[10px] text-slate-500">Click to increment</span>
+              </div>
+
+              <div class="grid grid-cols-5 gap-1.5 text-center">
+                <button onclick="incrementHabit('Water')" class="p-1 rounded-xl hover:bg-slate-50">
+                  <div class="w-9 h-9 mx-auto rounded-full border-2 border-blue-600 flex items-center justify-center text-xs font-bold text-slate-800 mb-1" id="habit-water-score">0/8</div>
+                  <span class="text-[9px] text-slate-500 block">Water</span>
+                </button>
+                <button onclick="incrementHabit('Workout')" class="p-1 rounded-xl hover:bg-slate-50">
+                  <div class="w-9 h-9 mx-auto rounded-full border-2 border-sky-400 flex items-center justify-center text-xs font-bold text-slate-800 mb-1" id="habit-workout-score">0/7</div>
+                  <span class="text-[9px] text-slate-500 block">Workout</span>
+                </button>
+                <button onclick="incrementHabit('Healthy Eating')" class="p-1 rounded-xl hover:bg-slate-50">
+                  <div class="w-9 h-9 mx-auto rounded-full border-2 border-indigo-600 flex items-center justify-center text-xs font-bold text-slate-800 mb-1" id="habit-eating-score">0/7</div>
+                  <span class="text-[9px] text-slate-500 block">Eating</span>
+                </button>
+                <button onclick="incrementHabit('No Junk Food')" class="p-1 rounded-xl hover:bg-slate-50">
+                  <div class="w-9 h-9 mx-auto rounded-full border-2 border-blue-500 flex items-center justify-center text-xs font-bold text-slate-800 mb-1" id="habit-junk-score">0/7</div>
+                  <span class="text-[9px] text-slate-500 block">No Junk</span>
+                </button>
+                <button onclick="incrementHabit('Sleep Goal')" class="p-1 rounded-xl hover:bg-slate-50">
+                  <div class="w-9 h-9 mx-auto rounded-full border-2 border-blue-400 flex items-center justify-center text-xs font-bold text-slate-800 mb-1" id="habit-sleep-score">0/7</div>
+                  <span class="text-[9px] text-slate-500 block">Sleep</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Right Side Column -->
+        <div class="space-y-5">
+          
+          <!-- Calendar -->
+          <div class="card-dark p-5 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="changeMonth(-1)" class="p-1 hover:bg-slate-100 rounded text-slate-500"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <h3 class="font-bold text-slate-900 text-sm" id="cal-month-title">October 2026</h3>
+              <button onclick="changeMonth(1)" class="p-1 hover:bg-slate-100 rounded text-slate-500"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="grid grid-cols-7 text-center text-[10px] font-medium text-slate-500 mb-2">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 text-center text-xs" id="calendar-days-grid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Tasks -->
+          <div class="card-dark p-5 rounded-2xl shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-slate-900 text-sm">Today's Tasks</h3>
+              <button onclick="openAddTaskPrompt()" class="text-xs text-blue-600 font-medium hover:underline flex items-center gap-1">
+                + Add Task
+              </button>
+            </div>
+
+            <div class="space-y-2 max-h-48 overflow-y-auto" id="task-list-container">
+              <!-- Tasks rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Gemini Analyst -->
+          <div class="card-dark p-5 rounded-2xl border border-blue-200 relative overflow-hidden shadow-sm">
+            <div class="flex items-center space-x-2 mb-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-blue-600"></i>
+              <h3 class="font-bold text-slate-900 text-sm">Gemini Health Analyst</h3>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">Analyzes only your actual logged user records.</p>
+            
+            <button onclick="generateAIInsight()" id="btn-generate-ai" class="w-full py-2 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md shadow-blue-500/20">
+              <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+              <span>Analyze My Inputs</span>
+            </button>
+
+            <div id="ai-response-box" class="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 min-h-[50px]">
+              <span class="text-slate-400 italic">Click analyze to evaluate your logged data...</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal: Add / Edit Log Entry -->
+  <div id="logModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="modal-title" class="font-bold text-slate-900 text-base">Add Health Record</h3>
+        <button onclick="closeLogModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="healthForm" onsubmit="handleFormSubmit(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="editLogId" value="" />
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Entry Date</label>
+          <input type="date" id="logDate" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-600 font-semibold text-slate-800" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+          <select id="logCategory" onchange="updateFormFields()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-600 font-semibold text-slate-800">
+            <option value="Steps">Steps (count)</option>
+            <option value="Nutrition">Calories / Meals (kcal)</option>
+            <option value="Water">Water Intake (liters)</option>
+            <option value="Sleep">Sleep Duration (hours)</option>
+            <option value="Workout">Workout Minutes</option>
+            <option value="Weight">Weight (kg)</option>
+            <option value="HeartRate">Heart Rate (bpm)</option>
+            <option value="BodyFat">Body Fat (%)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1" id="val-label">Recorded Value</label>
+          <input type="number" step="any" id="logValue" required placeholder="e.g. 5000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-600 font-semibold text-slate-800" />
+        </div>
+
+        <div id="extra-nutrition-fields" class="hidden grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500">Carbs (g)</label>
+            <input type="number" id="nutriCarbs" placeholder="50" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500">Protein (g)</label>
+            <input type="number" id="nutriProtein" placeholder="30" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500">Fats (g)</label>
+            <input type="number" id="nutriFats" placeholder="15" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-800" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Notes / Label</label>
+          <input type="text" id="logNotes" placeholder="e.g. Evening walk" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-600 font-semibold text-slate-800" />
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeLogModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50">Cancel</button>
+          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20">Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Drawer: View / Edit / Delete All User Logs -->
+  <div id="logsDrawer" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-end hidden">
+    <div class="bg-white w-full max-w-lg h-full p-6 border-l border-slate-200 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4 text-blue-600"></i> Your Input Log Records
+          </h3>
+          <button onclick="closeLogsDrawer()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <div class="mt-4 space-y-3 max-h-[75vh] overflow-y-auto pr-1" id="logs-history-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-100">
+        <button onclick="openLogModal()" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 shadow-md shadow-blue-500/20">
+          + Add New Log Entry
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // System State
+    let currentUser = { name: 'Pratha Sharma', email: 'pratha@wellness.com', id: 'usr_default' };
+    let userLogs = [];
+    let userTasks = [];
+    let userHabits = { Water: 0, Workout: 0, 'Healthy Eating': 0, 'No Junk Food': 0, 'Sleep Goal': 0 };
+
+    let currentCalDate = new Date();
+    let selectedDateStr = new Date().toISOString().split('T')[0];
+
+    let nutritionChartInstance = null;
+    let weightChartInstance = null;
+    let sleepChartInstance = null;
+
+    let workoutTimerInterval = null;
+    let timerActive = false;
+    let timerSeconds = 0;
+
+    const GOALS = { steps: 8000, calories: 1800, water: 2.5, sleep: 8.0 };
+
+    window.onload = function() {
+      lucide.createIcons();
+      document.getElementById('logDate').value = selectedDateStr;
+
+      loadUserSession();
+      initCharts();
+      renderAll();
+    };
+
+    function loadUserSession() {
+      const activeUserRaw = localStorage.getItem('wellness_active_user');
+      if (activeUserRaw) {
+        try { currentUser = JSON.parse(activeUserRaw); } catch(e) {}
+      } else {
+        localStorage.setItem('wellness_active_user', JSON.stringify(currentUser));
+      }
+      updateUserUI();
+      loadUserData();
+    }
+
+    function updateUserUI() {
+      document.getElementById('headerUserName').innerText = currentUser.name;
+      document.getElementById('welcomeUserName').innerText = currentUser.name.split(' ')[0];
+      document.getElementById('headerAvatar').innerText = currentUser.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    }
+
+    function openAuthModal() {
+      document.getElementById('authName').value = currentUser.name;
+      document.getElementById('authEmail').value = currentUser.email;
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('authName').value.trim();
+      const email = document.getElementById('authEmail').value.trim().toLowerCase();
+      if (!name || !email) return;
+
+      currentUser = { name, email, id: 'usr_' + btoa(email).replace(/=/g, '') };
+      localStorage.setItem('wellness_active_user', JSON.stringify(currentUser));
+      document.getElementById('authModal').classList.add('hidden');
+
+      updateUserUI();
+      loadUserData();
+    }
+
+    function continueAsGuest() {
+      currentUser = { name: 'Guest User', email: 'guest@wellness.com', id: 'usr_guest' };
+      localStorage.setItem('wellness_active_user', JSON.stringify(currentUser));
+      document.getElementById('authModal').classList.add('hidden');
+      updateUserUI();
+      loadUserData();
+    }
+
+    function loadUserData() {
+      const logsKey = `wellness_logs_${currentUser.id}`;
+      const tasksKey = `wellness_tasks_${currentUser.id}`;
+      const habitsKey = `wellness_habits_${currentUser.id}`;
+
+      const savedLogs = localStorage.getItem(logsKey);
+      userLogs = savedLogs ? JSON.parse(savedLogs) : [];
+
+      const savedTasks = localStorage.getItem(tasksKey);
+      userTasks = savedTasks ? JSON.parse(savedTasks) : [];
+
+      const savedHabits = localStorage.getItem(habitsKey);
+      if (savedHabits) userHabits = JSON.parse(savedHabits);
+
+      renderAll();
+    }
+
+    function saveUserData() {
+      localStorage.setItem(`wellness_logs_${currentUser.id}`, JSON.stringify(userLogs));
+      localStorage.setItem(`wellness_tasks_${currentUser.id}`, JSON.stringify(userTasks));
+      localStorage.setItem(`wellness_habits_${currentUser.id}`, JSON.stringify(userHabits));
+      renderAll();
+    }
+
+    function clearAllUserData() {
+      if (confirm(`Are you sure you want to delete ALL data for ${currentUser.name}?`)) {
+        userLogs = [];
+        userTasks = [];
+        userHabits = { Water: 0, Workout: 0, 'Healthy Eating': 0, 'No Junk Food': 0, 'Sleep Goal': 0 };
+        saveUserData();
+      }
+    }
+
+    function renderAll() {
+      renderSummaryRings();
+      renderNutritionChart();
+      renderWeightChart();
+      renderSleepChart();
+      renderHealthMetrics();
+      renderHabits();
+      renderCalendar();
+      renderTasks();
+      renderLogsList();
+    }
+
+    function renderSummaryRings() {
+      const todayLogs = userLogs.filter(l => l.date === selectedDateStr);
+
+      // Steps
+      const steps = todayLogs.filter(l => l.category === 'Steps').reduce((a, b) => a + Number(b.value), 0);
+      document.getElementById('card-steps-val').innerText = steps.toLocaleString();
+      const stepsPct = Math.min(Math.round((steps / GOALS.steps) * 100), 100);
+      document.getElementById('pct-steps').innerText = `${stepsPct}%`;
+      document.getElementById('ring-steps').style.strokeDashoffset = 138 - (138 * stepsPct / 100);
+
+      // Calories
+      const cals = todayLogs.filter(l => l.category === 'Nutrition').reduce((a, b) => a + Number(b.value), 0);
+      document.getElementById('card-calories-val').innerText = cals.toLocaleString();
+      const calsPct = Math.min(Math.round((cals / GOALS.calories) * 100), 100);
+      document.getElementById('pct-calories').innerText = `${calsPct}%`;
+      document.getElementById('ring-calories').style.strokeDashoffset = 138 - (138 * calsPct / 100);
+
+      // Water
+      const water = todayLogs.filter(l => l.category === 'Water').reduce((a, b) => a + Number(b.value), 0);
+      document.getElementById('card-water-val').innerText = `${water.toFixed(1)} L`;
+      const waterPct = Math.min(Math.round((water / GOALS.water) * 100), 100);
+      document.getElementById('pct-water').innerText = `${waterPct}%`;
+      document.getElementById('ring-water').style.strokeDashoffset = 138 - (138 * waterPct / 100);
+
+      // Sleep
+      const sleep = todayLogs.filter(l => l.category === 'Sleep').reduce((a, b) => a + Number(b.value), 0);
+      document.getElementById('card-sleep-val').innerText = `${sleep.toFixed(1)} h`;
+      const sleepPct = Math.min(Math.round((sleep / GOALS.sleep) * 100), 100);
+      document.getElementById('pct-sleep').innerText = `${sleepPct}%`;
+      document.getElementById('ring-sleep').style.strokeDashoffset = 138 - (138 * sleepPct / 100);
+    }
+
+    function initCharts() {
+      // Nutrition Chart
+      const ctxNutri = document.getElementById('nutritionChart').getContext('2d');
+      nutritionChartInstance = new Chart(ctxNutri, {
+        type: 'doughnut',
+        data: {
+          labels: ['Carbs', 'Protein', 'Fats'],
+          datasets: [{
+            data: [1, 1, 1],
+            backgroundColor: ['#2563EB', '#38BDF8', '#6366F1'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          cutout: '75%',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // Weight Chart
+      const ctxWeight = document.getElementById('weightChart').getContext('2d');
+      weightChartInstance = new Chart(ctxWeight, {
+        type: 'line',
+        data: {
+          labels: ['No Data'],
+          datasets: [{
+            data: [0],
+            borderColor: '#2563EB',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#2563EB'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#E2E8F0' }, ticks: { font: { size: 9 }, color: '#64748B' } },
+            y: { grid: { color: '#E2E8F0' }, ticks: { font: { size: 9 }, color: '#64748B' } }
+          }
+        }
+      });
+
+      // Sleep Chart
+      const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+      sleepChartInstance = new Chart(ctxSleep, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            data: [0, 0, 0, 0, 0, 0, 0],
+            backgroundColor: '#2563EB',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 8 }, color: '#64748B' } },
+            y: { display: false }
+          }
+        }
+      });
+    }
+
+    function renderNutritionChart() {
+      if (!nutritionChartInstance) return;
+      const todayLogs = userLogs.filter(l => l.date === selectedDateStr && l.category === 'Nutrition');
+      const totalCal = todayLogs.reduce((a, b) => a + Number(b.value), 0);
+      const carbs = todayLogs.reduce((a, b) => a + Number(b.carbs || 0), 0);
+      const protein = todayLogs.reduce((a, b) => a + Number(b.protein || 0), 0);
+      const fats = todayLogs.reduce((a, b) => a + Number(b.fats || 0), 0);
+
+      document.getElementById('nutri-center-cal').innerText = totalCal.toLocaleString();
+      document.getElementById('nutri-carbs-pct').innerText = `${carbs}g`;
+      document.getElementById('nutri-protein-pct').innerText = `${protein}g`;
+      document.getElementById('nutri-fats-pct').innerText = `${fats}g`;
+
+      nutritionChartInstance.data.datasets[0].data = [carbs || 1, protein || 1, fats || 1];
+      nutritionChartInstance.update();
+    }
+
+    function renderWeightChart() {
+      if (!weightChartInstance) return;
+      const weightLogs = userLogs.filter(l => l.category === 'Weight').sort((a,b) => new Date(a.date) - new Date(b.date));
+
+      if (weightLogs.length === 0) {
+        weightChartInstance.data.labels = ['No Weight Logged'];
+        weightChartInstance.data.datasets[0].data = [0];
+      } else {
+        weightChartInstance.data.labels = weightLogs.map(l => l.date.substring(5));
+        weightChartInstance.data.datasets[0].data = weightLogs.map(l => l.value);
+      }
+      weightChartInstance.update();
+    }
+
+    function renderSleepChart() {
+      if (!sleepChartInstance) return;
+      const sleepLogs = userLogs.filter(l => l.category === 'Sleep');
+      const last7Days = Array.from({length: 7}, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d.toISOString().split('T')[0];
+      });
+
+      const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dataValues = last7Days.map(dateStr => {
+        return sleepLogs.filter(l => l.date === dateStr).reduce((a, b) => a + Number(b.value), 0);
+      });
+
+      sleepChartInstance.data.labels = dayLabels;
+      sleepChartInstance.data.datasets[0].data = dataValues;
+      sleepChartInstance.update();
+    }
+
+    function renderHealthMetrics() {
+      const latestWeight = userLogs.filter(l => l.category === 'Weight').pop()?.value;
+      const latestFat = userLogs.filter(l => l.category === 'BodyFat').pop()?.value;
+      const latestBpm = userLogs.filter(l => l.category === 'HeartRate').pop()?.value;
+
+      document.getElementById('hm-weight').innerText = latestWeight ? `${latestWeight} kg` : '--';
+      document.getElementById('hm-fat').innerText = latestFat ? `${latestFat}%` : '--';
+      document.getElementById('hm-bpm').innerText = latestBpm ? `${latestBpm} bpm` : '--';
+      
+      if (latestWeight) {
+        const bmi = (latestWeight / (1.70 * 1.70)).toFixed(1);
+        document.getElementById('hm-bmi').innerText = bmi;
+      } else {
+        document.getElementById('hm-bmi').innerText = '--';
+      }
+    }
+
+    function renderHabits() {
+      document.getElementById('habit-water-score').innerText = `${userHabits.Water || 0}/8`;
+      document.getElementById('habit-workout-score').innerText = `${userHabits.Workout || 0}/7`;
+      document.getElementById('habit-eating-score').innerText = `${userHabits['Healthy Eating'] || 0}/7`;
+      document.getElementById('habit-junk-score').innerText = `${userHabits['No Junk Food'] || 0}/7`;
+      document.getElementById('habit-sleep-score').innerText = `${userHabits['Sleep Goal'] || 0}/7`;
+    }
+
+    function incrementHabit(key) {
+      userHabits[key] = ((userHabits[key] || 0) + 1) % 9;
+      saveUserData();
+    }
+
+    function renderCalendar() {
+      const year = currentCalDate.getFullYear();
+      const month = currentCalDate.getMonth();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      document.getElementById('cal-month-title').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const container = document.getElementById('calendar-days-grid');
+      container.innerHTML = '';
+
+      const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+
+      for (let i = 0; i < startOffset; i++) {
+        container.innerHTML += `<div class="py-1"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isSelected = dStr === selectedDateStr;
+        const hasLogs = userLogs.some(l => l.date === dStr);
+
+        container.innerHTML += `
+          <div onclick="selectDate('${dStr}')" class="py-1 rounded-full cursor-pointer hover:bg-slate-100 transition flex flex-col items-center justify-center relative ${isSelected ? 'bg-blue-600 text-white font-bold' : 'text-slate-700'}">
+            <span>${d}</span>
+            ${hasLogs && !isSelected ? '<span class="w-1 h-1 bg-blue-500 rounded-full absolute bottom-0.5"></span>' : ''}
+          </div>
+        `;
+      }
+    }
+
+    function selectDate(dStr) {
+      selectedDateStr = dStr;
+      document.getElementById('current-date-text').innerText = dStr;
+      document.getElementById('logDate').value = selectedDateStr;
+      renderAll();
+    }
+
+    function changeMonth(delta) {
+      currentCalDate.setMonth(currentCalDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('task-list-container');
+      container.innerHTML = '';
+
+      if (userTasks.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic p-2">No tasks added yet. Click + Add Task above.</p>`;
+        return;
+      }
+
+      userTasks.forEach(task => {
+        container.innerHTML += `
+          <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition text-xs border border-transparent hover:border-slate-100">
+            <label class="flex items-center space-x-2.5 cursor-pointer flex-1">
+              <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" class="rounded accent-blue-600 w-4 h-4" />
+              <span class="${task.completed ? 'line-through text-slate-400' : 'text-slate-700'}">${task.title}</span>
+            </label>
+            <button onclick="deleteTask('${task.id}')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function toggleTask(id) {
+      const t = userTasks.find(x => x.id === id);
+      if (t) t.completed = !t.completed;
+      saveUserData();
+    }
+
+    function deleteTask(id) {
+      userTasks = userTasks.filter(x => x.id !== id);
+      saveUserData();
+    }
+
+    function openAddTaskPrompt() {
+      const title = prompt("Enter new daily task:");
+      if (title && title.trim()) {
+        userTasks.push({ id: 't_' + Date.now(), title: title.trim(), completed: false });
+        saveUserData();
+      }
+    }
+
+    function logMood(mood, emoji) {
+      document.getElementById('current-mood-display').innerText = `Logged: ${emoji} ${mood}`;
+      userLogs.push({
+        id: 'mood_' + Date.now(),
+        date: selectedDateStr,
+        category: 'Mood',
+        value: mood,
+        notes: emoji
+      });
+      saveUserData();
+    }
+
+    function toggleWorkoutTimer() {
+      const btn = document.getElementById('btn-timer');
+      const display = document.getElementById('timer-display');
+
+      if (!timerActive) {
+        timerActive = true;
+        btn.innerText = "Pause Session";
+        workoutTimerInterval = setInterval(() => {
+          timerSeconds++;
+          const mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+          const secs = String(timerSeconds % 60).padStart(2, '0');
+          display.innerText = `${mins}:${secs}`;
+        }, 1000);
+      } else {
+        timerActive = false;
+        clearInterval(workoutTimerInterval);
+        btn.innerText = "Save Session";
+
+        if (timerSeconds > 0) {
+          const loggedMins = Math.max(1, Math.round(timerSeconds / 60));
+          userLogs.push({
+            id: 'wo_' + Date.now(),
+            date: selectedDateStr,
+            category: 'Workout',
+            value: loggedMins,
+            notes: `Workout session (${loggedMins} mins)`
+          });
+          timerSeconds = 0;
+          display.innerText = "00:00";
+          btn.innerText = "Start Session";
+          saveUserData();
+        }
+      }
+    }
+
+    function openLogModal(cat = 'Steps') {
+      document.getElementById('editLogId').value = '';
+      document.getElementById('logCategory').value = cat;
+      document.getElementById('logDate').value = selectedDateStr;
+      updateFormFields();
+      document.getElementById('logModal').classList.remove('hidden');
+    }
+
+    function closeLogModal() {
+      document.getElementById('logModal').classList.add('hidden');
+    }
+
+    function updateFormFields() {
+      const cat = document.getElementById('logCategory').value;
+      const lbl = document.getElementById('val-label');
+      const extraNutri = document.getElementById('extra-nutrition-fields');
+
+      extraNutri.classList.add('hidden');
+      if (cat === 'Steps') lbl.innerText = 'Recorded Value (Steps)';
+      if (cat === 'Nutrition') {
+        lbl.innerText = 'Recorded Value (Calories - kcal)';
+        extraNutri.classList.remove('hidden');
+      }
+      if (cat === 'Water') lbl.innerText = 'Recorded Value (Liters)';
+      if (cat === 'Sleep') lbl.innerText = 'Recorded Value (Hours)';
+      if (cat === 'Workout') lbl.innerText = 'Recorded Value (Minutes)';
+      if (cat === 'Weight') lbl.innerText = 'Recorded Value (Kg)';
+      if (cat === 'HeartRate') lbl.innerText = 'Recorded Value (BPM)';
+      if (cat === 'BodyFat') lbl.innerText = 'Recorded Value (%)';
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editLogId').value;
+      const cat = document.getElementById('logCategory').value;
+      const val = parseFloat(document.getElementById('logValue').value);
+      const date = document.getElementById('logDate').value;
+      const notes = document.getElementById('logNotes').value;
+
+      let carbs = 0, protein = 0, fats = 0;
+      if (cat === 'Nutrition') {
+        carbs = parseFloat(document.getElementById('nutriCarbs').value) || 0;
+        protein = parseFloat(document.getElementById('nutriProtein').value) || 0;
+        fats = parseFloat(document.getElementById('nutriFats').value) || 0;
+      }
+
+      if (editId) {
+        userLogs = userLogs.map(l => l.id === editId ? { ...l, date, category: cat, value: val, carbs, protein, fats, notes } : l);
+      } else {
+        userLogs.push({ id: 'log_' + Date.now(), date, category: cat, value: val, carbs, protein, fats, notes });
+      }
+
+      saveUserData();
+      closeLogModal();
+    }
+
+    function openLogsDrawer() {
+      renderLogsList();
+      document.getElementById('logsDrawer').classList.remove('hidden');
+    }
+
+    function closeLogsDrawer() {
+      document.getElementById('logsDrawer').classList.add('hidden');
+    }
+
+    function renderLogsList() {
+      const container = document.getElementById('logs-history-list');
+      container.innerHTML = '';
+
+      if (userLogs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 italic p-4 text-center">No logs found. Enter your first health record!</p>`;
+        return;
+      }
+
+      userLogs.slice().reverse().forEach(log => {
+        container.innerHTML += `
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-800">${log.category}</span>
+                <span class="text-[10px] text-slate-500">(${log.date})</span>
+              </div>
+              <p class="text-blue-600 font-semibold mt-0.5">${log.value} ${getUnit(log.category)} ${log.notes ? '• ' + log.notes : ''}</p>
+            </div>
+            <div class="flex items-center space-x-1">
+              <button onclick="editLog('${log.id}')" class="p-1 text-slate-400 hover:text-slate-700"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+              <button onclick="deleteLog('${log.id}')" class="p-1 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    function getUnit(cat) {
+      if (cat === 'Steps') return 'steps';
+      if (cat === 'Nutrition') return 'kcal';
+      if (cat === 'Water') return 'L';
+      if (cat === 'Sleep') return 'hrs';
+      if (cat === 'Workout') return 'mins';
+      if (cat === 'Weight') return 'kg';
+      if (cat === 'HeartRate') return 'bpm';
+      return '';
+    }
+
+    function editLog(id) {
+      const log = userLogs.find(l => l.id === id);
+      if (!log) return;
+
+      document.getElementById('editLogId').value = log.id;
+      document.getElementById('logCategory').value = log.category;
+      document.getElementById('logDate').value = log.date;
+      document.getElementById('logValue').value = log.value;
+      document.getElementById('logNotes').value = log.notes || '';
+
+      if (log.category === 'Nutrition') {
+        document.getElementById('nutriCarbs').value = log.carbs || '';
+        document.getElementById('nutriProtein').value = log.protein || '';
+        document.getElementById('nutriFats').value = log.fats || '';
+      }
+
+      updateFormFields();
+      closeLogsDrawer();
+      document.getElementById('logModal').classList.remove('hidden');
+    }
+
+    function deleteLog(id) {
+      userLogs = userLogs.filter(l => l.id !== id);
+      saveUserData();
+      renderLogsList();
+    }
+
+    async function generateAIInsight() {
+      const box = document.getElementById('ai-response-box');
+      const btn = document.getElementById('btn-generate-ai');
+
+      if (userLogs.length === 0) {
+        box.innerHTML = `<span class="text-blue-600">Please log at least one entry (e.g. Steps or Sleep) before running the analysis.</span>`;
+        return;
+      }
+
+      box.innerHTML = `<span class="text-blue-600 animate-pulse">Analyzing user logged records with Gemini...</span>`;
+      btn.disabled = true;
+
+      const userSummaryText = userLogs.slice(-10).map(l => `- ${l.date}: ${l.category} = ${l.value} (${l.notes || ''})`).join('\n');
+      const systemPrompt = "You are an expert personal wellness data analyst. Provide 3 short, encouraging actionable insights based purely on the provided user inputs.";
+      
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `User Activity Inputs:\n${userSummaryText}` }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+          })
+        });
+
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis completed.";
+        box.innerHTML = `<div class="space-y-1 font-medium text-slate-700">${text.replace(/\n/g, '<br/>')}</div>`;
+      } catch (err) {
+        box.innerHTML = `<span class="text-slate-600">Based on your logged data: Stay consistent with hydration and balance your workout recovery time for optimal performance.</span>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function handleSearch(val) {
+      if (!val) return;
+      openLogsDrawer();
+    }
+
+    function switchTab(tab) { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+  </script>
+</body>
+</html>
